@@ -19,7 +19,7 @@ func check(e error) {
 
 func fileCopy(src, dst string) {
 	defer wg.Done()
-	fmt.Printf("Copy %v -> %v", src, dst)
+	fmt.Printf("Copy %v -> %v\n", src, dst)
 
 	sourceFileStat, err := os.Stat(src)
 	check(err)

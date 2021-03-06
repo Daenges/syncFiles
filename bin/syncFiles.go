@@ -36,7 +36,7 @@ func startProc() {
 			check(err)
 			defer emptyFile.Close()
 
-			dat := []byte("# Enter configuration (one File per line) as described in the help page.")
+			dat = []byte("# Enter configuration (one File per line) as described in the help page.")
 			emptyFile.Write(dat)
 
 			log.Printf("Could not find config. Created one at %v\\config.txt", path)
@@ -51,7 +51,7 @@ func startProc() {
 	if !isAllComented(fileData) && len(fileData) > 0 {
 		for _, line := range fileData {
 			if len(line) > 0 && line[0] != '#' {	// Allow comments
-				go detectAndExecuteOperation(line)
+				go detectAndExecuteOperation(line) // todo make go later
 			}
 		}
 		wg.Wait()
