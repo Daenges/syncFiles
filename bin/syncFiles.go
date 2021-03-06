@@ -36,9 +36,10 @@ func startProc() {
 			check(err)
 			defer emptyFile.Close()
 
-			emptyFile.Write([]byte("# Enter configuration (one File per line) as described in the help page."))
+			dat := []byte("# Enter configuration (one File per line) as described in the help page.")
+			emptyFile.Write(dat)
 
-			log.Printf("Could not find config. Created one at %v", path)
+			log.Printf("Could not find config. Created one at %v\\config.txt", path)
 		} else {
 			log.Fatal("Could not get working directory. Please create a config file, so the program can operate properly.")
 		}

@@ -42,7 +42,7 @@ func fileCopy(src, dst string) {
 
 func isAllComented(fileContent []string) bool {
 	for _, line := range fileContent {
-		if line[0] != '#' {
+		if line[0] != '#' && len(line) > 0 {
 			return false
 		}
 	}
