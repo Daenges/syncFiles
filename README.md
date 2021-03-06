@@ -1,5 +1,5 @@
 # syncFiles
-Syncronize files between several folders on your pc.
+Synchronize files between several folders of your pc.
 
 Help Page  
 Execution: syncFile.exe [Path of Config] (arg) (val)  
