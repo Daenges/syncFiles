@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -54,7 +55,9 @@ func getArgs() int {
 
 	for num, arg := range argSlice {
 		if arg == "-t" {
-			return int(arg[num+1])
+			if temp, err := strconv.Atoi(argSlice[num+1]); err == nil {
+				return temp
+			}
 		}
 		if arg == "-h" || arg == "--help" {
 			printHelp()
