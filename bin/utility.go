@@ -157,8 +157,13 @@ func getPathsInQuotes(pathsInQuotes string) (pathArray []string) {
 				beginCopy = false
 			} else {
 				beginCopy = true
-				pathArray = append(pathArray, "")
-				currentPosInArray++
+
+				if len(pathArray) < 1 || isFile(pathArray[currentPosInArray]) { 	// Check whether the array is empty or the current path is even valid before adding it.
+					pathArray = append(pathArray, "")
+					currentPosInArray++
+				} else {
+					pathArray[currentPosInArray] = ""		// Clear the current pos if it is no valid file and overwrite it. //todo further rework
+				}
 			}
 		} else {
 			if beginCopy && pathArray != nil {

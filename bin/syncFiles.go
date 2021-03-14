@@ -41,9 +41,21 @@ func startProc() {
 	}
 }
 
+func copyFileIfPathIsValid(path, pathFrom string) {
+	if isFile(path) {						// Check whether the file exists, to avoid errors in the next statement.
+		if !isSameFile(pathFrom, path) {
+			wg.Add(1)
+			go fileCopy(pathFrom, path)
+		}
+	} else {
+		wg.Add(1)
+		go fileCopy(pathFrom, path)
+	}
+}
+
 func detectAndExecuteOperation(line string) {
 
-	if strings.Contains(line, "<->") {
+	if strings.Contains(line, "<->") { 		// Get the newest file version and replace all the others with it.
 		pathsTo := getPathsInQuotes(line)
 		mostRecent := getNewestFile(pathsTo)
 
@@ -69,8 +81,8 @@ func detectAndExecuteOperation(line string) {
 				}
 			}
 		}
-	} else if strings.Contains(line, "|->") {
-		pathFrom := getPathsInQuotes(strings.Split(line, "->")[0])[0]
+	} else if strings.Contains(line, "|->") {		// Always copy this file, if the other one changed.
+		pathFrom := getPathsInQuotes(strings.Split(line, "|->")[0])[0]
 		pathsTo := getPathsInQuotes(strings.Split(line, "|->")[1])
 
 		for _, path := range pathsTo {
@@ -82,7 +94,7 @@ func detectAndExecuteOperation(line string) {
 					path += filepath.Base(pathFrom)
 				}
 
-				if isFile(path) {
+				if isFile(path) {						// Check whether the file exists, to avoid errors in the next statement.
 					if !isSameFile(pathFrom, path) {
 						wg.Add(1)
 						go fileCopy(pathFrom, path)
