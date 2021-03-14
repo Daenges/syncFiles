@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -41,13 +43,29 @@ func fileCopy(src, dst string) {
 	check(err)
 }
 
-func isAllComented(fileContent []string) bool {
-	for _, line := range fileContent {
-		if line[0] != '#' && len(line) > 0 {
-			return false
+func getConfigOrCreateIt() (fileContent []byte) {
+	if wd, err := os.Getwd(); isFile(wd+getPathSeperator()+"config.txt") && err == nil {
+		fileContent, err = ioutil.ReadFile(wd + getPathSeperator() + "config.txt")
+		check(err)
+	} else if len(os.Args[1:]) > 0 {
+		fileContent, err = ioutil.ReadFile(os.Args[1])
+		check(err)
+	} else {
+
+		if path, err := os.Getwd(); err == nil {
+			emptyFile, err := os.Create(path + getPathSeperator() + "config.txt")
+			check(err)
+			defer emptyFile.Close()
+
+			fileContent = []byte("# Enter configuration (one File per line) as described in the help page.")
+			emptyFile.Write(fileContent)
+
+			log.Printf("Could not find config. Created one at %v%vconfig.txt", path, getPathSeperator())
+		} else {
+			log.Fatal("Could not get working directory. Please create a config file, so the program can operate properly.")
 		}
 	}
-	return true
+	return
 }
 
 func getArgs() int {

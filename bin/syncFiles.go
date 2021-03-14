@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -22,45 +20,25 @@ func main() {
 }
 
 func startProc() {
-
+	// Read config content or create one if it does not exist.
 	fileData := strings.Split(string(getConfigOrCreateIt()), "\n")
 
 	// Entry format: PATHFROM -> PathTo1 PathTo2 PathTo3
-	if !isAllComented(fileData) && len(fileData) > 0 {
+	if fileEmpty := true; len(fileData) > 0 {
 		for _, line := range fileData {
-			if len(line) > 0 && line[0] != '#' { // Allow comments
-				go detectAndExecuteOperation(line) // todo make go later
+			if len(line) > 0 && line[0] != '#' { 	// Allow comments
+				go detectAndExecuteOperation(line) 	// todo make go later
+				fileEmpty = false					// Check that file has content.
 			}
 		}
-		wg.Wait()
+		if !fileEmpty {
+			wg.Wait()
+		} else {
+			log.Fatalf("The file contains no commands!")
+		}
 	} else {
 		log.Fatalf("The file was empty!")
 	}
-}
-
-func getConfigOrCreateIt() (fileContent []byte) {
-	if wd, err := os.Getwd(); isFile(wd+getPathSeperator()+"config.txt") && err == nil {
-		fileContent, err = ioutil.ReadFile(wd + getPathSeperator() + "config.txt")
-		check(err)
-	} else if len(os.Args[1:]) > 0 {
-		fileContent, err = ioutil.ReadFile(os.Args[1])
-		check(err)
-	} else {
-
-		if path, err := os.Getwd(); err == nil {
-			emptyFile, err := os.Create(path + getPathSeperator() + "config.txt")
-			check(err)
-			defer emptyFile.Close()
-
-			fileContent = []byte("# Enter configuration (one File per line) as described in the help page.")
-			emptyFile.Write(fileContent)
-
-			log.Printf("Could not find config. Created one at %v%vconfig.txt", path, getPathSeperator())
-		} else {
-			log.Fatal("Could not get working directory. Please create a config file, so the program can operate properly.")
-		}
-	}
-	return
 }
 
 func detectAndExecuteOperation(line string) {
