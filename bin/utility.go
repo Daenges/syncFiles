@@ -104,6 +104,16 @@ func printHelp() {
 	fmt.Println("# - To Comment a line")
 }
 
+func preparePath(path, pathFrom string) string {
+	if path[len(path)-1:] != getPathSeperator() && !isFile(path) {
+		path += getPathSeperator()
+	}
+	if path[len(path)-1:] == getPathSeperator() {
+		path += filepath.Base(pathFrom)
+	}
+	return path
+}
+
 func isSameFile(pathFileA, pathFileB string) (bool, error) {
 	if isFile(pathFileA) && isFile(pathFileB) {
 		fileContentA, err := os.Open(pathFileA)
