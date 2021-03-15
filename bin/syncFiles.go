@@ -64,24 +64,28 @@ func detectAndExecuteOperation(line string) {
 }
 
 func startCopyProcess(pathFrom, operator string, pathsTo []string) {
-	for _, path := range pathsTo {
-		if len(path) > 0 {
-			path = preparePath(path, pathFrom)
+	if isFile(pathFrom) {
+		for _, path := range pathsTo {
+			if len(path) > 0 {
+				path = preparePath(path, pathFrom)
 
-			if same, NotexistentErr := isSameFile(pathFrom, path); NotexistentErr != nil {
-				addToWgAndCopy(pathFrom, path)
-			} else {
-				if operator == "->" && !same && a_NEWER_b(pathFrom, path) {
+				if same, NotexistentErr := isSameFile(pathFrom, path); NotexistentErr != nil {
 					addToWgAndCopy(pathFrom, path)
+				} else {
+					if operator == "->" && !same && a_NEWER_b(pathFrom, path) {
+						addToWgAndCopy(pathFrom, path)
+					}
+					if operator == "|->" && !same {
+						addToWgAndCopy(pathFrom, path)
+					}
+					if operator == "<->" && !same && path != pathFrom {
+						addToWgAndCopy(path, pathFrom)
+					}
 				}
-				if operator == "|->" && !same {
-					addToWgAndCopy(pathFrom, path)
-				}
-				if operator == "<->" && !same && path != pathFrom {
-					addToWgAndCopy(path, pathFrom)
-				}
+
 			}
-
 		}
+	} else {
+		log.Printf("This path is not a valid file: %v", pathFrom)
 	}
 }
