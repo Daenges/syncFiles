@@ -26,7 +26,8 @@ func startProc() {
 	if fileEmpty := true; len(fileData) > 0 {
 		for _, line := range fileData {
 			if len(line) > 0 && line[0] != '#' { 	// Allow comments
-				/*go*/ detectAndExecuteOperation(line) 	// todo make go later
+				wg.Add(1)
+				go detectOperation(line) 	// todo make go later
 				fileEmpty = false					// Check that file has content.
 			}
 		}
@@ -40,30 +41,31 @@ func startProc() {
 	}
 }
 
-func detectAndExecuteOperation(line string) {
+func detectOperation(line string) {
+	defer wg.Done()
 
 	if strings.Contains(line, "<->") { 		// Get the newest file version and replace all the others with it.
 		pathsTo := getPathsInQuotes(line)
 		mostRecent := getNewestFile(pathsTo)
 
 		if mostRecent != "" {
-			startCopyProcess(mostRecent, "<->", pathsTo)
+			startCopyOperation(mostRecent, "<->", pathsTo)
 		}
 
 	} else if strings.Contains(line, "|->") {		// Always copy this file, if the other one changed.
 		pathFrom := getPathsInQuotes(strings.Split(line, "|->")[0])[0]
 		pathsTo := getPathsInQuotes(strings.Split(line, "|->")[1])
-		startCopyProcess(pathFrom, "|->", pathsTo)
+		startCopyOperation(pathFrom, "|->", pathsTo)
 
 	} else if strings.Contains(line, "->") {
 
 		pathFrom := getPathsInQuotes(strings.Split(line, "->")[0])[0]
 		pathsTo := getPathsInQuotes(strings.Split(line, "->")[1])
-		startCopyProcess(pathFrom, "->", pathsTo)
+		startCopyOperation(pathFrom, "->", pathsTo)
 	}
 }
 
-func startCopyProcess(pathFrom, operator string, pathsTo []string) {
+func startCopyOperation(pathFrom, operator string, pathsTo []string) {
 	if isFile(pathFrom) {
 		for _, path := range pathsTo {
 			if len(path) > 0 {
