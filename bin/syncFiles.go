@@ -41,16 +41,14 @@ func startProc() {
 	}
 }
 
-func copyFileIfPathIsValid(path, pathFrom string) {
-	if isFile(path) {						// Check whether the file exists, to avoid errors in the next statement.
-		if !isSameFile(pathFrom, path) {
-			wg.Add(1)
-			go fileCopy(pathFrom, path)
-		}
-	} else {
-		wg.Add(1)
-		go fileCopy(pathFrom, path)
+func preparePath(path, pathFrom string) string {
+	if path[len(path)-1:] != getPathSeperator() && !isFile(path) {
+		path += getPathSeperator()
 	}
+	if path[len(path)-1:] == getPathSeperator() {
+		path += filepath.Base(pathFrom)
+	}
+	return path
 }
 
 func detectAndExecuteOperation(line string) {
@@ -60,75 +58,100 @@ func detectAndExecuteOperation(line string) {
 		mostRecent := getNewestFile(pathsTo)
 
 		if mostRecent != "" {
-			for _, path := range pathsTo {
-				if len(path) > 0 {
-					if path[len(path)-1:] != getPathSeperator() && !isFile(path) {
-						path += getPathSeperator()
-					}
-					if path[len(path)-1:] == getPathSeperator() {
-						path += filepath.Base(mostRecent)
-					}
-
-					if isFile(path) {
-						if !isSameFile(mostRecent, path) && path != mostRecent {
-							wg.Add(1)
-							go fileCopy(mostRecent, path)
-						}
-					} else {
-						wg.Add(1)
-						go fileCopy(mostRecent, path)
-					}
-				}
-			}
+			//for _, path := range pathsTo {
+			//	if len(path) > 0 {
+			//		path = preparePath(path, mostRecent)
+			//
+			//		//if isFile(path) {
+			//		//	if !isSameFile(mostRecent, path) && path != mostRecent {
+			//		//		wg.Add(1)
+			//		//		go fileCopy(mostRecent, path)
+			//		//	}
+			//		//} else {
+			//		//	wg.Add(1)
+			//		//	go fileCopy(mostRecent, path)
+			//		//}
+			//
+			//		if same, NotexistentErr := isSameFile(mostRecent, path); NotexistentErr != nil {
+			//			addToWgAndCopy(mostRecent, path)
+			//		} else if !same && path != mostRecent {
+			//			addToWgAndCopy(mostRecent, path)
+			//		}
+			//	}
+			//}
+			startCopyProcess(mostRecent, "<->", pathsTo)
 		}
 	} else if strings.Contains(line, "|->") {		// Always copy this file, if the other one changed.
 		pathFrom := getPathsInQuotes(strings.Split(line, "|->")[0])[0]
 		pathsTo := getPathsInQuotes(strings.Split(line, "|->")[1])
 
-		for _, path := range pathsTo {
-			if len(path) > 0 {
-				if path[len(path)-1:] != getPathSeperator() && !isFile(path) {
-					path += getPathSeperator()
-				}
-				if path[len(path)-1:] == getPathSeperator() {
-					path += filepath.Base(pathFrom)
-				}
+		//for _, path := range pathsTo {
+		//	if len(path) > 0 {
+		//		path = preparePath(path, pathFrom)
+		//
+		//		//if isFile(path) {						// Check whether the file exists, to avoid errors in the next statement.
+		//		//	if !isSameFile(pathFrom, path) {
+		//		//		addToWgAndCopy(pathFrom, path)
+		//		//	}
+		//		//} else {
+		//		//	addToWgAndCopy(pathFrom, path)
+		//		//}
+		//
+		//		if same, NotexistentErr := isSameFile(pathFrom, path); NotexistentErr != nil {
+		//			addToWgAndCopy(pathFrom, path)
+		//		} else if !same {
+		//			addToWgAndCopy(pathFrom, path)
+		//		}
+		//	}
+		//}
 
-				if isFile(path) {						// Check whether the file exists, to avoid errors in the next statement.
-					if !isSameFile(pathFrom, path) {
-						wg.Add(1)
-						go fileCopy(pathFrom, path)
-					}
-				} else {
-					wg.Add(1)
-					go fileCopy(pathFrom, path)
-				}
-			}
-		}
+		startCopyProcess(pathFrom, "|->", pathsTo)
 	} else if strings.Contains(line, "->") {
 
 		pathFrom := getPathsInQuotes(strings.Split(line, "->")[0])[0]
 		pathsTo := getPathsInQuotes(strings.Split(line, "->")[1])
 
-		for _, path := range pathsTo {
-			if len(path) > 0 {
-				if path[len(path)-1:] != getPathSeperator() && !isFile(path) {
-					path += getPathSeperator()
-				}
-				if path[len(path)-1:] == getPathSeperator() {
-					path += filepath.Base(pathFrom)
-				}
+		//for _, path := range pathsTo {
+		//	if len(path) > 0 {
+		//		path = preparePath(path, pathFrom)
+		//
+		//		//if isFile(path) {
+		//		//	if !isSameFile(pathFrom, path) && a_NEWER_b(pathFrom, path) {
+		//		//		addToWgAndCopy(pathFrom, path)
+		//		//	}
+		//		//} else {
+		//		//	addToWgAndCopy(pathFrom, path)
+		//		//}
+		//		if same, NotexistentErr := isSameFile(pathFrom, path); NotexistentErr != nil {
+		//			addToWgAndCopy(pathFrom, path)
+		//		} else if !same && a_NEWER_b(pathFrom, path) {
+		//			addToWgAndCopy(pathFrom, path)
+		//		}
+		//	}
+		//}
+		startCopyProcess(pathFrom, "->", pathsTo)
+	}
+}
 
-				if isFile(path) {
-					if !isSameFile(pathFrom, path) && a_NEWER_b(pathFrom, path) {
-						wg.Add(1)
-						go fileCopy(pathFrom, path)
-					}
-				} else {
-					wg.Add(1)
-					go fileCopy(pathFrom, path)
+func startCopyProcess(pathFrom, operator string, pathsTo []string) {
+	for _, path := range pathsTo {
+		if len(path) > 0 {
+			path = preparePath(path, pathFrom)
+
+			if same, NotexistentErr := isSameFile(pathFrom, path); NotexistentErr != nil {
+				addToWgAndCopy(pathFrom, path)
+			} else {
+				if operator == "->" && !same && a_NEWER_b(pathFrom, path) {
+					addToWgAndCopy(pathFrom, path)
+				}
+				if operator == "|->" && !same {
+					addToWgAndCopy(pathFrom, path)
+				}
+				if operator == "<->" && !same && path != pathFrom {
+					addToWgAndCopy(path, pathFrom)
 				}
 			}
+
 		}
 	}
 }

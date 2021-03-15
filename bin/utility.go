@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var pathSeperator string
+
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -102,37 +104,41 @@ func printHelp() {
 	fmt.Println("# - To Comment a line")
 }
 
-func isSameFile(pathFileA, pathFileB string) bool {
-	fileContentA, err := os.Open(pathFileA)
-	if err != nil{
-		return false
+func isSameFile(pathFileA, pathFileB string) (bool, error) {
+	if isFile(pathFileA) && isFile(pathFileB) {
+		fileContentA, err := os.Open(pathFileA)
+		if err != nil {
+			return false, nil
+		} else {
+			defer fileContentA.Close()
+		}
+
+		fileContentB, err := os.Open(pathFileB)
+		if err != nil {
+			return false, nil
+		} else {
+			defer fileContentA.Close()
+		}
+
+		hashfuncA := sha256.New()
+		hashfuncB := sha256.New()
+
+		if _, err := io.Copy(hashfuncA, fileContentA); err != nil {
+			check(err)
+		}
+
+		hashValA := hex.EncodeToString(hashfuncA.Sum(nil))
+
+		if _, err := io.Copy(hashfuncB, fileContentB); err != nil {
+			check(err)
+		}
+
+		hashValB := hex.EncodeToString(hashfuncB.Sum(nil))
+
+		return hashValA == hashValB, nil
 	} else {
-		defer fileContentA.Close()
+		return false, fmt.Errorf("at least one path is not valid")
 	}
-
-	fileContentB, err := os.Open(pathFileB)
-	if err != nil{
-		return false
-	} else {
-		defer fileContentA.Close()
-	}
-
-	hashfuncA := sha256.New()
-	hashfuncB := sha256.New()
-
-	if _, err := io.Copy(hashfuncA, fileContentA); err != nil {
-		check(err)
-	}
-
-	hashValA := hex.EncodeToString(hashfuncA.Sum(nil))
-
-	if _, err := io.Copy(hashfuncB, fileContentB); err != nil {
-		check(err)
-	}
-
-	hashValB := hex.EncodeToString(hashfuncB.Sum(nil))
-
-	return hashValA == hashValB
 }
 
 func a_NEWER_b(pathA, pathB string) bool {
@@ -158,12 +164,8 @@ func getPathsInQuotes(pathsInQuotes string) (pathArray []string) {
 			} else {
 				beginCopy = true
 
-				if len(pathArray) < 1 || isFile(pathArray[currentPosInArray]) { 	// Check whether the array is empty or the current path is even valid before adding it.
-					pathArray = append(pathArray, "")
-					currentPosInArray++
-				} else {
-					pathArray[currentPosInArray] = ""		// Clear the current pos if it is no valid file and overwrite it. //todo further rework
-				}
+				pathArray = append(pathArray, "")
+				currentPosInArray++
 			}
 		} else {
 			if beginCopy && pathArray != nil {
@@ -172,7 +174,7 @@ func getPathsInQuotes(pathsInQuotes string) (pathArray []string) {
 		}
 	}
 
-	return
+	return // Does not return invalid paths
 }
 
 func isFile(path string) bool {
@@ -186,12 +188,22 @@ func isFile(path string) bool {
 	}
 }
 
+func addToWgAndCopy(pathFrom, path string) {
+	wg.Add(1)
+	go fileCopy(pathFrom, path)
+}
+
 func getPathSeperator() string {
-	if runtime.GOOS == "windows" {
-		return "\\"
-	} else {
-		return "/"
+
+	// GOOS is recorded at compile time.
+	if pathSeperator == "" {
+		if runtime.GOOS == "windows" {
+			pathSeperator = "\\"
+		} else {
+			pathSeperator = "/"
+		}
 	}
+	return pathSeperator
 }
 
 func getNewestFile(pathFiles []string) (pathNewest string) {
