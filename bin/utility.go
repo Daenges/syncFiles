@@ -84,7 +84,7 @@ func getArgs() int {
 			os.Exit(1)
 		}
 	}
-	return 5000
+	return 5000 // set t to 5 sec
 }
 
 func printHelp() {
@@ -127,7 +127,7 @@ func isSameFile(pathFileA, pathFileB string) (bool, error) {
 		if err != nil {
 			return false, nil
 		} else {
-			defer fileContentA.Close()
+			defer fileContentB.Close()
 		}
 
 		hashfuncA := sha256.New()
@@ -184,7 +184,7 @@ func getPathsInQuotes(pathsInQuotes string) (pathArray []string) {
 		}
 	}
 
-	return // Does not return invalid paths
+	return
 }
 
 func isFile(path string) bool {
